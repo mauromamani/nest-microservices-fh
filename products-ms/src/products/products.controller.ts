@@ -30,6 +30,8 @@ export class ProductsController {
   // @Patch(':id')
   @MessagePattern({ cmd: 'UPDATE' })
   async update(@Payload() updateProductDto: UpdateProductDto) {
+    console.log(updateProductDto);
+
     return this.productsService.update(updateProductDto.id, updateProductDto);
   }
 
