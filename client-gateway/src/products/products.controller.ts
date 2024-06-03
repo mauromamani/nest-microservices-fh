@@ -13,29 +13,29 @@ import {
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { catchError } from 'rxjs';
 import { PaginationDto } from 'src/common';
-import { PRODUCT_SERVICE } from 'src/config';
+import { NATS_SERVICE } from 'src/config';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 
 @Controller('products')
 export class ProductsController {
   constructor(
-    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy,
+    @Inject(NATS_SERVICE) private readonly clientProxy: ClientProxy,
   ) {}
 
   @Post()
   createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productsClient.send({ cmd: 'CREATE' }, createProductDto);
+    return this.clientProxy.send({ cmd: 'CREATE' }, createProductDto);
   }
 
   @Get()
   findAllProducts(@Query() paginationDto: PaginationDto) {
-    return this.productsClient.send({ cmd: 'FIND_ALL' }, paginationDto);
+    return this.clientProxy.send({ cmd: 'FIND_ALL' }, paginationDto);
   }
 
   @Get(':id')
   findOneProduct(@Param('id') id: string) {
-    return this.productsClient.send({ cmd: 'FIND_ONE' }, { id }).pipe(
+    return this.clientProxy.send({ cmd: 'FIND_ONE' }, { id }).pipe(
       catchError((error) => {
         throw new RpcException(error);
       }),
@@ -44,7 +44,7 @@ export class ProductsController {
 
   @Delete(':id')
   removeProduct(@Param('id') id: number) {
-    return this.productsClient.send({ cmd: 'REMOVE' }, { id }).pipe(
+    return this.clientProxy.send({ cmd: 'REMOVE' }, { id }).pipe(
       catchError((error) => {
         throw new RpcException(error);
       }),
@@ -56,7 +56,7 @@ export class ProductsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
   ) {
-    return this.productsClient
+    return this.clientProxy
       .send({ cmd: 'UPDATE' }, { id, ...updateProductDto })
       .pipe(
         catchError((error) => {
