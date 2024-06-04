@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  nats-server:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      - "6222:6222"
+
+  client-gateway:
+    build: ./client-gateway
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client-gateway/src:/usr/src/app/src
+    command: npm run start:dev
+    depends_on:
+      - nats-server
+    environment:
+      - PORT=3000
+      - PRODUCTS_MICROSERVICE_HOST=localhost
+      - PRODUCTS_MICROSERVICE_PORT=3001
+      - ORDERS_MICROSERVICE_HOST=localhost
+      - ORDERS_MICROSERVICE_PORT=3002
+      - NATS_SERVERS=nats://nats-server:4222
+  
+  products-ms:
+    build: ./products-ms
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./products-ms/src:/usr/src/app/src
+    command: npm run start:dev
+    depends_on:
+      - nats-server
+    environment:
+      - PORT=3001
+      - PRODUCTS_MICROSERVICE_HOST=localhost
+      - PRODUCTS_MICROSERVICE_PORT=3001
+      - ORDERS_MICROSERVICE_HOST=localhost
+      - ORDERS_MICROSERVICE_PORT=3002
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=file:./dev.db
+
+  orders-ms:
+    build: ./orders-ms
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./orders-ms/src:/usr/src/app/src
+    command: npm run start:dev
+    depends_on:
+      - nats-server
+      - orders-database
+    environment:
+      - PORT=3002
+      - PRODUCTS_MICROSERVICE_HOST=localhost
+      - PRODUCTS_MICROSERVICE_PORT=3001
+      - ORDERS_MICROSERVICE_HOST=localhost
+      - ORDERS_MICROSERVICE_PORT=3002
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=postgresql://postgres:postgres@orders-database:5432/orders?schema=public
+
+  orders-database:
+    container_name: orders_database
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - ./orders-ms/postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orders

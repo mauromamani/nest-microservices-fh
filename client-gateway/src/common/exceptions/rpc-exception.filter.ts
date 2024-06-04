@@ -20,6 +20,8 @@ export class RpcCustomExceptionFilter implements ExceptionFilter {
       });
     }
 
+    console.log('rpcError', rpcError);
+
     return response.status(401).json({
       status: 401,
       message: 'Unauthorized :(',
